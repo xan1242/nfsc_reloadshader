@@ -79,6 +79,7 @@ int ShaderToReloadPointerInt = 0;
 bool bFastReloading = false;
 int uDisplayFrameThing4_func = 0x00710100;
 int uDisplayFrameThing5_func = 0x0072B370;
+bool UpdateFlags[NFSC_SHADEROBJ_COUNT];
 void(__stdcall*UnloadShaders_func)() = (void(__stdcall*)())0x0073E700;
 void(__stdcall*UpdateShaders_func)() = (void(__stdcall*)())0x0073E740;
 void(__thiscall*sub_72B660)(unsigned int dis) = (void(__thiscall*)(unsigned int))0x72B660;
@@ -100,16 +101,22 @@ void __stdcall UnloadShaders_Custom()
 	int(__stdcall*DXFunc1)(unsigned int var1);
 	int(__stdcall*DXFunc2)(unsigned int var1);
 
-	v1 = *(int*)ShaderToReloadPointerInt;
-	if (*(int*)(v1 + 0x44))
+	for (int i = 0; i < NFSC_SHADEROBJ_COUNT; i++)
 	{
-		DXFunc1 = (int(__stdcall*)(unsigned int))*(int*)(*(int*)*(int*)(v1 + 0x44) + 0x114);
-		DXFunc1(*(int*)(v1 + 0x44));
+		if (UpdateFlags[i])
+		{
+			v1 = *(int*)(int)&ShaderObjects[i];
+			if (*(int*)(v1 + 0x44))
+			{
+				DXFunc1 = (int(__stdcall*)(unsigned int))*(int*)(*(int*)*(int*)(v1 + 0x44) + 0x114);
+				DXFunc1(*(int*)(v1 + 0x44));
 
-		DXFunc2 = (int(__stdcall*)(unsigned int))*(int*)(*(int*)*(int*)(v1 + 0x44) + 8);
-		DXFunc2(*(int*)(v1 + 0x44));
+				DXFunc2 = (int(__stdcall*)(unsigned int))*(int*)(*(int*)*(int*)(v1 + 0x44) + 8);
+				DXFunc2(*(int*)(v1 + 0x44));
 
-		*(int*)(v1 + 0x44) = 0;
+				*(int*)(v1 + 0x44) = 0;
+			}
+		}
 	}
 }
 
@@ -122,36 +129,41 @@ void __stdcall UpdateShaders_Custom()
 	int v2;
 	SomeDXStruct DXStruct;
 
-	int thing1;
 	int thing3;
 
 	int(__stdcall*DXFunc1)(unsigned int var1, unsigned int var2);
 	int(__stdcall*DXFunc2)(unsigned int var1, unsigned int var2);
 	int(__stdcall*DXFunc3)(unsigned int var1, unsigned int var2, unsigned int var3);
 
-	v1 = *(int*)ShaderToReloadPointerInt;
-
-	if (!*(int*)(v1 + 0x44))
+	for (int i = 0; i < NFSC_SHADEROBJ_COUNT; i++)
 	{
-		sub_72B660((int)v1);
-	}
+		if (UpdateFlags[i])
+		{
+			v1 = *(int*)(int)&ShaderObjects[i];
 
-	if (*(int*)(v1 + 16))
-	{
-		thing3 = *(int*)*(int*)(v1 + 0x44);
-		DXFunc1 = (int(__stdcall*)(unsigned int, unsigned int))*(int*)(thing3 + 0x30);
-		v2 = DXFunc1(*(int*)(v1 + 0x44), *(int*)(v1 + 0xC));
-		*(int*)(v1 + 16) = v2;
+			if (!*(int*)(v1 + 0x44))
+			{
+				sub_72B660((int)v1);
+			}
 
-		DXFunc2 = (int(__stdcall*)(unsigned int, unsigned int))*(int*)(thing3 + 0xE8);
-		DXFunc2(*(int*)(v1 + 0x44), v2);
+			if (*(int*)(v1 + 16))
+			{
+				thing3 = *(int*)*(int*)(v1 + 0x44);
+				DXFunc1 = (int(__stdcall*)(unsigned int, unsigned int))*(int*)(thing3 + 0x30);
+				v2 = DXFunc1(*(int*)(v1 + 0x44), *(int*)(v1 + 0xC));
+				*(int*)(v1 + 16) = v2;
+
+				DXFunc2 = (int(__stdcall*)(unsigned int, unsigned int))*(int*)(thing3 + 0xE8);
+				DXFunc2(*(int*)(v1 + 0x44), v2);
+			}
+			thing3 = *(int*)*(int*)(v1 + 0x44);
+			DXFunc3 = (int(__stdcall*)(unsigned int, unsigned int, unsigned int))*(int*)(thing3 + 0x14);
+			DXFunc3(*(int*)(v1 + 0x44), *(int*)(v1 + 16), (unsigned int)&DXStruct);
+			*(int*)(v1 + 20) = DXStruct.unk2;
+			UpdateFlags[i] = false;
+		}
 	}
-	thing3 = *(int*)*(int*)(v1 + 0x44);
-	DXFunc3 = (int(__stdcall*)(unsigned int, unsigned int, unsigned int))*(int*)(thing3 + 0x14);
-	DXFunc3(*(int*)(v1 + 0x44), *(int*)(v1 + 16), (unsigned int)&DXStruct);
-	*(int*)(v1 + 20) = DXStruct.unk2;
 }
-
 int DeStutterCaveExit = 0x731241;
 void __declspec(naked) DeStutterCave()
 {
@@ -169,7 +181,7 @@ int TriggerReload(int ShaderIndex)
 {
 	printf("Reloading [%s] @ %X\n", ShaderNames[ShaderIndex], &ShaderObjects[ShaderIndex]);
 	bFastReloading = true;
-	ShaderToReloadPointerInt = (int)&ShaderObjects[ShaderIndex];
+	UpdateFlags[ShaderIndex] = true;
 	*(unsigned int*)0x00AB0B25 = 1;
 	return 0;
 }
