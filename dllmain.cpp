@@ -7,6 +7,39 @@
 #include "includes\IniReader.h"
 #define NFSC_SHADEROBJ_COUNT 29
 
+enum ShaderTypes
+{
+	WorldShader = 0,
+	WorldReflectShader,
+	WorldBoneShader,
+	WorldNormalMap,
+	CarShader,
+	CARNORMALMAP,
+	WorldMinShader,
+	FEShader,
+	FEMaskShader,
+	FilterShader,
+	ScreenFilterShader,
+	RainDropShader,
+	VisualTreatmentShader,
+	WorldPrelitShader,
+	ParticlesShader,
+	skyshader,
+	shadow_map_mesh,
+	CarShadowMapShader,
+	WorldDepthShader,
+	shadow_map_mesh_depth,
+	NormalMapNoFog,
+	InstanceMesh,
+	ScreenEffectShader,
+	HDRShader,
+	UCAP,
+	GLASS_REFLECT,
+	WATER,
+	RVMPIP,
+	GHOSTCAR
+};
+
 char ShaderNames[NFSC_SHADEROBJ_COUNT][22] = {
 	"WorldShader",
 	"WorldReflectShader",
@@ -46,100 +79,77 @@ int ShaderToReloadPointerInt = 0;
 bool bFastReloading = false;
 int uDisplayFrameThing4_func = 0x00710100;
 int uDisplayFrameThing5_func = 0x0072B370;
-int UpdateShaders_func = 0x0073E740;
-int UnloadShaders_func = 0x0073E700;
+void(__stdcall*UnloadShaders_func)() = (void(__stdcall*)())0x0073E700;
+void(__stdcall*UpdateShaders_func)() = (void(__stdcall*)())0x0073E740;
+void(__thiscall*sub_72B660)(unsigned int dis) = (void(__thiscall*)(unsigned int))0x72B660;
 
-int sub_72B660 = 0x72B660;
-void __declspec(naked) UpdateSingleShaderFunc()
+typedef struct SomeDXStruct
+{
+	int unk1;
+	int unk2;
+	int unk3;
+};
+
+void __stdcall UnloadShaders_Custom()
 {
 	if (!bFastReloading)
-		_asm jmp UpdateShaders_func
-	_asm
+		return UnloadShaders_func();
+
+	int v1;
+
+	int(__stdcall*DXFunc1)(unsigned int var1);
+	int(__stdcall*DXFunc2)(unsigned int var1);
+
+	v1 = *(int*)ShaderToReloadPointerInt;
+	if (*(int*)(v1 + 0x44))
 	{
-		sub     esp, 0xC
-		push    esi
-		push    edi
-		mov     edi, ShaderToReloadPointerInt
-		lea     ebx, [ebx + 0]
+		DXFunc1 = (int(__stdcall*)(unsigned int))*(int*)(*(int*)*(int*)(v1 + 0x44) + 0x114);
+		DXFunc1(*(int*)(v1 + 0x44));
 
-	loc_73E750:
-		mov     esi, [edi]
-		mov     eax, [esi + 0x44]
-		test    eax, eax
-		jnz     loc_73E760
-		mov     ecx, esi
-		call    sub_72B660
+		DXFunc2 = (int(__stdcall*)(unsigned int))*(int*)(*(int*)*(int*)(v1 + 0x44) + 8);
+		DXFunc2(*(int*)(v1 + 0x44));
 
-	loc_73E760 :
-		mov     eax, [esi + 0x10]
-		test    eax, eax
-		jz      loc_73E784
-		mov     edx, [esi + 0xC]
-		mov     eax, [esi + 0x44]
-		mov     ecx, [eax]
-		push    edx
-		push    eax
-		call    dword ptr[ecx + 0x30]
-		mov     ecx, [esi + 0x44]
-		push    eax
-		mov[esi + 0x10], eax
-		mov     edx, [ecx]
-		push    ecx
-		call    dword ptr[edx + 0x0E8]
-
-	loc_73E784:
-		mov     eax, [esi + 0x44]
-		mov     ecx, [eax]
-		lea     edx, [esp + 0x14 - 0xC]
-		push    edx
-		mov     edx, [esi + 0x10]
-		push    edx
-		push    eax
-		call    dword ptr[ecx + 0x14]
-		mov     eax, [esp + 0x14 - 0x8]
-		add     edi, 4
-		//cmp     edi, ShaderToReloadPointerInt
-		mov[esi + 0x14], eax
-		//jle     loc_73E750
-		pop     edi
-		pop     esi
-		add     esp, 0xC
-		retn
+		*(int*)(v1 + 0x44) = 0;
 	}
 }
 
-void __declspec(naked) UnloadSingleShaderFunc()
+void __stdcall UpdateShaders_Custom()
 {
 	if (!bFastReloading)
-		_asm jmp UnloadShaders_func
-	_asm
+		return UpdateShaders_func();
+
+	int v1;
+	int v2;
+	SomeDXStruct DXStruct;
+
+	int thing1;
+	int thing3;
+
+	int(__stdcall*DXFunc1)(unsigned int var1, unsigned int var2);
+	int(__stdcall*DXFunc2)(unsigned int var1, unsigned int var2);
+	int(__stdcall*DXFunc3)(unsigned int var1, unsigned int var2, unsigned int var3);
+
+	v1 = *(int*)ShaderToReloadPointerInt;
+
+	if (!*(int*)(v1 + 0x44))
 	{
-		push    esi
-		push    edi
-		mov     edi, ShaderToReloadPointerInt
-		
-	loc_73E707:
-		mov     esi, [edi]
-		mov     eax, [esi+0x44]
-		test    eax, eax
-		jz      loc_73E729
-		mov     ecx, [eax]
-		push    eax
-		call    dword ptr [ecx+0x114]
-		mov     eax, [esi+0x44]
-		mov     edx, [eax]
-		push    eax
-		call    dword ptr [edx+8]
-		mov     dword ptr [esi+0x44], 0
-		
-	loc_73E729:
-		//add     edi, 4
-		//cmp     edi, ShaderToReloadPointerIntEnd2Def
-		//jl      loc_73E707
-		pop     edi
-		pop     esi
-		retn
+		sub_72B660((int)v1);
 	}
+
+	if (*(int*)(v1 + 16))
+	{
+		thing3 = *(int*)*(int*)(v1 + 0x44);
+		DXFunc1 = (int(__stdcall*)(unsigned int, unsigned int))*(int*)(thing3 + 0x30);
+		v2 = DXFunc1(*(int*)(v1 + 0x44), *(int*)(v1 + 0xC));
+		*(int*)(v1 + 16) = v2;
+
+		DXFunc2 = (int(__stdcall*)(unsigned int, unsigned int))*(int*)(thing3 + 0xE8);
+		DXFunc2(*(int*)(v1 + 0x44), v2);
+	}
+	thing3 = *(int*)*(int*)(v1 + 0x44);
+	DXFunc3 = (int(__stdcall*)(unsigned int, unsigned int, unsigned int))*(int*)(thing3 + 0x14);
+	DXFunc3(*(int*)(v1 + 0x44), *(int*)(v1 + 16), (unsigned int)&DXStruct);
+	*(int*)(v1 + 20) = DXStruct.unk2;
 }
 
 int DeStutterCaveExit = 0x731241;
@@ -190,8 +200,8 @@ int Init()
 {
 	InitThread();
 	injector::MakeJMP(0x0073122E, DeStutterCave, true);
-	injector::MakeCALL(0x007311FD, UpdateSingleShaderFunc, true);
-	injector::MakeCALL(0x007311E6, UnloadSingleShaderFunc, true);
+	injector::MakeCALL(0x007311FD, UpdateShaders_Custom, true);
+	injector::MakeCALL(0x007311E6, UnloadShaders_Custom, true);
 
 	return 0;
 }
